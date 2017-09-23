@@ -58,10 +58,11 @@ char exibe_menu_e_aceita_opcao(void)
 
 void executa_acao(char opcao)
 {
+    if (opcao == '\n')
+        return;
+
     system("clear");
     printf("Tarefa escolhida: ");
-
-    printf("\n\n\n ORRA MEU %c\n\n\n", opcao);
 
     switch (opcao)
     {
@@ -77,27 +78,24 @@ void executa_acao(char opcao)
     case '4':
         printf("Finalizar processo");
         break;
-    case '\n':
-        break;
     default:
         printf("inválida!");
         break;
     }
 
-    if (c != '\n')
-    {
-        // TODO corrigir problema de manter caracter \n no stdin :(
-        fflush(stdout);
-        printf("\nPressione qualquer tecla para prosseguir.");
-        read_something();
-
-        sleep(2);
-    }
+    fflush(stdout);
+    printf("\nPressione qualquer tecla para prosseguir.");
+    read_something();
 }
 
 char read_something()
 {
-    char something;
-    something = fgetc(stdin);
-    return something;
+    char c = fgetc(stdin);
+
+    int ch;
+    if (c != '\n')
+        while ((ch = getchar()) != '\n' && ch != EOF)
+            ;
+
+    return c;
 }
