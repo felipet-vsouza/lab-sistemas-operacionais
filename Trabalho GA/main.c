@@ -14,6 +14,7 @@ typedef struct
 
 void inicializa_jobs(void);
 char exibe_menu_e_aceita_opcao(void);
+void verifica_atualizacao_de_jobs(void);
 void executa_acao(char opcao);
 void run_browser_job(void);
 char read_something(void);
@@ -58,6 +59,8 @@ char exibe_menu_e_aceita_opcao(void)
 {
     // TODO fix segmentation fault on struct data access
 
+    verifica_atualizacao_de_jobs();
+
     system("clear");
 
     printf("<<<< Applications Menu >>>>\tPID:%d\tPPID:%d\n", getpid(), getppid());
@@ -69,6 +72,14 @@ char exibe_menu_e_aceita_opcao(void)
     printf("Opção: ");
 
     return read_something();
+}
+
+void verifica_atualizacao_de_jobs(void)
+{
+    update_job(browser_job);
+    update_job(text_editor_job);
+    update_job(terminal_job);
+    update_job(process_mgmt_job);
 }
 
 void executa_acao(char opcao)
@@ -155,22 +166,25 @@ void read_string(char *buffer, int bsize)
 void initialize_job(job_data *job)
 {
     job = (job_data *)malloc(sizeof(job_data));
+    job->pid = 0;
     job->_status_ = "parado";
     job->_is_running_ = 0;
 }
 
 void failed_job(job_data *job)
 {
-    browser_job->pid = 0;
-    browser_job->_status_ = "falhou";
+    job->pid = 0;
+    job->_is_running_ = 0;
+    job->_status_ = "falhou";
 }
 
 void start_job(job_data *job, pid_t pid)
 {
-    job->pid = pid;
     char *status = (char *)malloc(30 * sizeof(char));
     sprintf(status, "executando, pid=%d", pid);
     job->_status_ = status;
+    job->pid = pid;
+    job->_is_running_ = 1;
 }
 
 void update_job(job_data *job)
@@ -185,6 +199,7 @@ void update_job(job_data *job)
 void end_job(job_data *job, int status)
 {
     job->pid = 0;
+    job->_is_running_ = 0;
     if (status == 0)
         job->_status_ = "concluído";
     else
