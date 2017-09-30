@@ -19,7 +19,7 @@ void executa_acao(char opcao);
 void run_browser_job(void);
 char read_something(void);
 void read_string(char *buffer, int bsize);
-void initialize_job(job_data *job);
+job_data* initialize_job();
 void failed_job(job_data *job);
 void start_job(job_data *job, pid_t pid);
 void update_job(job_data *job);
@@ -49,10 +49,10 @@ int main(void)
 
 void inicializa_jobs(void)
 {
-    initialize_job(browser_job);
-    initialize_job(text_editor_job);
-    initialize_job(terminal_job);
-    initialize_job(process_mgmt_job);
+    browser_job = initialize_job();
+    text_editor_job = initialize_job();
+    terminal_job = initialize_job();
+    process_mgmt_job = initialize_job();
 }
 
 char exibe_menu_e_aceita_opcao(void)
@@ -163,12 +163,13 @@ void read_string(char *buffer, int bsize)
 }
 
 /*  GENERAL JOB FUNCTIONS   */
-void initialize_job(job_data *job)
+job_data* initialize_job()
 {
-    job = (job_data *)malloc(sizeof(job_data));
+    job_data *job = (job_data *)malloc(sizeof(job_data));
     job->pid = 0;
     job->_status_ = "parado";
     job->_is_running_ = 0;
+    return job;
 }
 
 void failed_job(job_data *job)
@@ -210,6 +211,6 @@ void end_job(job_data *job, int status)
 void abre_navegador(char *url)
 {
     char argString[340];
-    sprintf(argString, "google-chrome %s", url);
+    sprintf(argString, "firefox --new-window %s", url);
     system(argString);
 }
