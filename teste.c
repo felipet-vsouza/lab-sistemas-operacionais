@@ -4,9 +4,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
-
-#define clear() printf("\033[H\033[J")
 
 typedef struct
 {
@@ -16,7 +13,7 @@ typedef struct
 } job_data;
 
 void inicializa_jobs(void);
-void exibe_menu(void);
+char exibe_menu_e_aceita_opcao(void);
 void verifica_atualizacao_de_jobs(void);
 void executa_acao(char opcao);
 void run_browser_job(void);
@@ -30,8 +27,6 @@ void start_job(job_data *job, pid_t pid);
 void update_job(job_data *job);
 void end_job(job_data *job, int status);
 void abre_navegador(char *url);
-void signal_handler(int signum);
-void clean_console();
 
 job_data *browser_job;
 job_data *text_editor_job;
@@ -40,45 +35,12 @@ job_data *process_mgmt_job;
 
 int main(void)
 {
-    inicializa_jobs();
-    clear();
-    exibe_menu();
+    
 
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-
-    sa.sa_handler = &signal_handler;
-    if (sigaction(SIGINT, &sa, NULL) != 0)
-    {
-        printf("Problema com tratador SIGINT");
-        exit(-1);
-    }
-    if (sigaction(SIGCHLD, &sa, NULL) != 0)
-    {
-        printf("Problema com tratador SIGCHLD");
-        exit(-1);
-    }
-
-    char option;
-    while ((option = read_something()) != '5')
-    {
-        executa_acao(option);
-        clear();
-        exibe_menu();
-    }
-
-    clear();
+    system("gnome-terminal");
     printf("Adeus!\n\n");
 
     return 0;
-}
-
-void signal_handler(int signum)
-{
-    if (signum == SIGCHLD) 
-    {
-        exibe_menu();
-    }
 }
 
 void inicializa_jobs(void)
@@ -89,10 +51,12 @@ void inicializa_jobs(void)
     process_mgmt_job = initialize_job();
 }
 
-void exibe_menu(void)
+char exibe_menu_e_aceita_opcao(void)
 {
-    clear();
     verifica_atualizacao_de_jobs();
+
+    system("clear");
+
     printf("<<<< Applications Menu >>>>\tPID:%d\tPPID:%d\n", getpid(), getppid());
     printf("\t1) Web Browser\t\t(%s)\n", browser_job->_status_);
     printf("\t2) Text Editor\t\t(%s)\n", text_editor_job->_status_);
@@ -100,6 +64,8 @@ void exibe_menu(void)
     printf("\t4) Finalizar processo\t(%s)\n", process_mgmt_job->_status_);
     printf("\t5) Quit\n");
     printf("Opção: ");
+
+    return read_something();
 }
 
 void verifica_atualizacao_de_jobs(void)
@@ -107,7 +73,7 @@ void verifica_atualizacao_de_jobs(void)
     update_job(browser_job);
     update_job(text_editor_job);
     update_job(terminal_job);
-    update_job(process_mgmt_job);
+    //update_job(process_mgmt_job);
 }
 
 void executa_acao(char opcao)
@@ -115,7 +81,7 @@ void executa_acao(char opcao)
     if (opcao == '\n')
         return;
 
-    //system("clear");
+    system("clear");
     printf("Tarefa escolhida: ");
 
     switch (opcao)
@@ -132,28 +98,8 @@ void executa_acao(char opcao)
         printf("Terminal");
         run_terminal_job();
         break;
-    case '4': 
-    {
-        printf("Finalizar processo\n");
-        printf("\nDigite o processo a ser encerrado: ");
-        char opt = read_something();
-        if (opt == '1')
-        {
-            kill(browser_job->pid, SIGKILL);
-        } 
-        else if (opt == '2') 
-        {
-            kill(text_editor_job->pid, SIGKILL);
-        } 
-        else if (opt == '3')
-        {
-            kill(terminal_job->pid, SIGKILL);
-        }
-        else 
-        {
-            printf("Opcao Invalida");
-        }
-    }
+    case '4':
+        printf("Finalizar processo");
         break;
     default:
         printf("inválida!");
@@ -177,7 +123,6 @@ void run_browser_job(void)
     }
     else if (job_pid == 0)
     {
-        signal(SIGINT, SIG_IGN);
         abre_navegador(url);
         exit(0);
     }
@@ -197,7 +142,6 @@ void run_text_editor_job(void)
     }
     else if (job_pid == 0)
     {
-        signal(SIGINT, SIG_IGN);
         execlp("gedit", "gedit", NULL);        
         exit(0);
     }
@@ -217,7 +161,6 @@ void run_terminal_job(void)
     }
     else if (job_pid == 0)
     {
-        signal(SIGINT, SIG_IGN);
         execlp("gnome-terminal", "gnome-terminal", NULL);
         exit(0);
     }
