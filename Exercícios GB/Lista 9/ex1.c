@@ -2,9 +2,11 @@
 #include<stdlib.h>
 #include<unistd.h>
 
-int main(){
+#define MAXLINE 4096
 
-	int fd[2];
+int main(){
+	int n, fd[2];
+	char line[MAXLINE];
 
 	if (pipe(fd) != 0){
 		perror("pipe");
@@ -17,20 +19,15 @@ int main(){
 		exit(EXIT_FAILURE);
 		break;
 	case 0:
-		close(fd[1]);
-		dup2(fd[0], STDIN_FILENO);
-		printf("Filho recebendo...");
 		close(fd[0]);
-		execlp("wc", "wc", NULL);
-		perror("exec WC");
+		printf("Filho escrevendo...");
+		write(fd[1],"Hello World\n",12);
 		break;
 	default:
-		close(fd[0]);
-		dup2(fd[1], STDOUT_FILENO);
-		printf("Pai...");
 		close(fd[1]);
-		execlp("ls", "ls", NULL);
-		perror("exec LS");
+		printf("Pai lendo...");
+		n=read(fd[0],line,MAXLINE);
+		write(STDOUT_FILENO, line, n);
 		break;
 	}
 	exit(EXIT_SUCCESS);
