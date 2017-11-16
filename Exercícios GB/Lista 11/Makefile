@@ -10,5 +10,8 @@ all: main
 main: $(SRC_DIR)/velha-main.c
 	$(CC) -o $(BIN_DIR)/velha-main $(SRC_DIR)/velha-main.c $(LRT_FLAG)
 
+client: $(SRC_DIR)/client.c
+	$(CC) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(LRT_FLAG)
+
 clean:
 	rm -rf $(BIN_DIR)

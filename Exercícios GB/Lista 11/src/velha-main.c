@@ -10,11 +10,12 @@
 
 void gerencia_conexao(void);
 void aguarda_conexao(mqd_t queue);
-void processa_conexao(ssize_t nbytes, char *buffer, mqd_t queue);
+void processa_conexao(ssize_t nbytes, const char *buffer, mqd_t queue);
 int finalizou_conexao(void);
 int jogo_finalizou(void);
 void gerencia_jogo(void);
 int finalizou(char c);
+ssize_t get_msg_buffer_size(mqd_t queue);
 
 typedef struct jogador_t
 {
@@ -69,22 +70,22 @@ void gerencia_jogo(void)
 
 void aguarda_conexao(mqd_t queue)
 {
-	ssize_t nbytes;
-	ssize_t tam_buffer;
-	char *buffer;
-	struct mq_attr attr;
-	if (mq_getattr(queue, &attr) != -1)
-	{
-		tam_buffer = attr.mq_msgsize;
-	}
-	else
-	{
-		printf("getattr");
-		exit(2);
-	}
-
 	while (!finalizou_conexao())
 	{
+		ssize_t nbytes;
+		ssize_t tam_buffer;
+		char *buffer;
+		struct mq_attr attr;
+		if (mq_getattr(queue, &attr) != -1)
+		{
+			tam_buffer = attr.mq_msgsize;
+		}
+		else
+		{
+			printf("getattr");
+			exit(2);
+		}
+		buffer = calloc(tam_buffer, 1);
 		printf("Aguardando conexão...\n");
 		nbytes = mq_receive(queue, buffer, tam_buffer, NULL);
 		processa_conexao(nbytes, buffer, queue);
@@ -106,7 +107,7 @@ int finalizou_conexao(void)
 	return 1;
 }
 
-void processa_conexao(ssize_t nbytes, char *buffer, mqd_t queue)
+void processa_conexao(ssize_t nbytes, const char *buffer, mqd_t queue)
 {
 	if (nbytes < 0)
 	{
@@ -114,6 +115,8 @@ void processa_conexao(ssize_t nbytes, char *buffer, mqd_t queue)
 		return;
 	}
 	mensagem_t *mensagem = (mensagem_t *)buffer;
+	printf("Tipo: %d", mensagem->tipo);
+	// printf("Nome: %s", mensagem->nome);
 	if (mensagem->tipo != CONEXAO)
 	{
 		printf("Não é mensagem de conexão.\n");
@@ -182,4 +185,17 @@ int finalizou(char c)
 				tabela[1][1] == c &&
 				tabela[2][0] == c;
 	return linhas || colunas || diagonal1 || diagonal2;
+}
+
+ssize_t get_msg_buffer_size(mqd_t queue) {
+	struct mq_attr attr;
+
+	/* Determine max. msg size; allocate buffer to receive msg */
+	if (mq_getattr(queue, &attr) != -1) {
+		printf("max msg size: %ld\n", attr.mq_msgsize);
+		return attr.mq_msgsize;
+	}
+
+	perror("aloca_msg_buffer");
+	exit(3);
 }

@@ -9,6 +9,7 @@ typedef enum tipo_resposta {
     LIBERACAO = 5,
     FINALIZACAO = 6
 } tipo_resposta;
+
 typedef enum tipo_mensagem {
     CONEXAO = 1,
     JOGADA = 2
@@ -17,30 +18,20 @@ typedef enum tipo_mensagem {
 typedef struct mensagem_t
 {
     tipo_mensagem tipo;
-    union { // CONEXÃO
-        char *nome;
-    };
-    union { // JOGADA
-        int x;
-        int y;
-        int identificador;
-    };
+    char *nome;
+    int x;
+    int y;
+    int identificador;
 } mensagem_t;
 
 typedef struct resposta_t
 {
     tipo_resposta tipo;
-    union { // CONEXÃO
-        int identificador;
-        char *caminho;
-    };
-    union { // JOGADA
-        char tabela[3][3];
-    };
-    union { // FINALIZAÇÂO
-        int is_ganhador;
-        char *ganhador;
-    };
+    int identificador;
+    char *caminho;
+    char tabela[3][3];
+    int is_ganhador;
+    char *ganhador;
 } resposta_t;
 
 #endif
