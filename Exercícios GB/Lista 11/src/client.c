@@ -27,6 +27,15 @@ int main()
     scanf("%s", nome);
     printf("Bem vindo: %s", nome);
     init_game(queue, nome);
+    while (1) 
+    {
+        int x, y;
+        printf("Digite as cordenadas da jogada:\n");
+        printf("X: ");
+        scanf("%d", &x);
+        printf("\nY: ");
+        scanf("%d", &y);
+    }
 	return 0;
 }
 

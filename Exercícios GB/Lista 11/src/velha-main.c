@@ -8,20 +8,9 @@
 
 #define clear_screen() printf("\033[H\033[J")
 
-void gerencia_conexao(void);
-void aguarda_conexao(mqd_t queue);
-void processa_conexao(ssize_t nbytes, const char *buffer, mqd_t queue);
-int processa_jogada(ssize_t nbytes, const char *buffer, mqd_t queue, int identificador);
-int finalizou_conexao(void);
-int jogo_finalizou(void);
-void gerencia_jogo(void);
 int finalizou(char c);
-ssize_t get_msg_buffer_size(mqd_t queue);
-void aguarda_jogada(int identificador);
-void informa_sobre_jogada(void);
-int coordenadas_invalidas(int x, int y);
+int jogo_finalizou(void);
 char get_char_jogador(int identificador);
-void informa_final_jogo(void);
 
 typedef struct jogador_t
 {
@@ -37,20 +26,7 @@ static int identificador = 0;
 static char tabela[3][3] = {{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}};
 static int ganhador = -1;
 
-/**
- * Jogador 0: O
- * Jogador 1: X
-*/
-int main(void)
-{
-	printf("Iniciando conexão\n");
-	gerencia_conexao();
-	gerencia_jogo();
-	printf("\nJogo finalizado.\n");
-	return 0;
-}
-
-void gerencia_conexao(void)
+mqd_t gerencia_conexao(void)
 {
 	mqd_t queue;
 	char *buffer = NULL;
@@ -65,10 +41,10 @@ void gerencia_conexao(void)
 	}
 	aguarda_conexao(queue);
 
-	return;
+	return queue;
 }
 
-void gerencia_jogo(void)
+void gerencia_jogo(mqd_t queue)
 {
 	int i;
 	for (i = 0; !jogo_finalizou(); i = (i + 1) % 2)
@@ -104,13 +80,13 @@ void aguarda_conexao(mqd_t queue)
 	printf("Conexão finalizada.\n");
 }
 
-void aguarda_jogada(int identificador)
+void aguarda_jogada(int identificador, mqd_t queue)
 {
 	informa_sobre_jogada();
 	int jogou = 0;
 	while (!jogou)
 	{
-		jogada_t liberacao;
+		resposta_t liberacao;
 		liberacao.tipo = LIBERACAO;
 		int res = mq_send(queues[identificador], (const char *)&liberacao, sizeof(resposta_t), 20);
 		if (res < 0)
@@ -143,7 +119,6 @@ void informa_sobre_jogada(void)
 {
 	resposta_t jogada0;
 	jogada0.tipo = JOGADA_EXECUTADA;
-	jogada0.tabela = tabela;
 	int res = mq_send(queues[0], (const char *)&jogada0, sizeof(resposta_t), 20);
 	if (res < 0)
 	{
@@ -153,8 +128,7 @@ void informa_sobre_jogada(void)
 
 	resposta_t jogada1;
 	jogada1.tipo = JOGADA_EXECUTADA;
-	jogada1.tabela = tabela;
-	int res = mq_send(queues[1], (const char *)&jogada1, sizeof(resposta_t), 20);
+	res = mq_send(queues[1], (const char *)&jogada1, sizeof(resposta_t), 20);
 	if (res < 0)
 	{
 		printf("mq send");
@@ -334,7 +308,7 @@ void informa_final_jogo(void)
 	jogada1.tipo = FINALIZACAO;
 	jogada1.is_ganhador = 1 == ganhador;
 	jogada1.ganhador = jogadores[ganhador].nome;
-	int res = mq_send(queues[1], (const char *)&jogada1, sizeof(resposta_t), 20);
+	res = mq_send(queues[1], (const char *)&jogada1, sizeof(resposta_t), 20);
 	if (res < 0)
 	{
 		printf("mq send");
@@ -343,4 +317,17 @@ void informa_final_jogo(void)
 
 	mq_close(queues[0]);
 	mq_close(queues[1]);
+}
+
+/**
+ * Jogador 0: O
+ * Jogador 1: X
+*/
+int main(void)
+{
+	printf("Iniciando conexão\n");
+	mqd_t queue = gerencia_conexao();
+	gerencia_jogo(queue);
+	printf("\nJogo finalizado.\n");
+	return 0;
 }
